@@ -24,10 +24,16 @@ typedef uint32_t u32;
 s32 Telemetry_checkSign(s32 data);
 
 /**
- * Transmitting a n-byte data
+ * Transmitting a n-byte data using UART
  * @param data
  * @param bytes - number of bytes of the register
  */
 void Telemetry_nthBytesTransmit(s32 data, u8 bytes);
+
+/**
+ * Receiving n-bytes using UART interface
+ * @return  n-bytes data
+ */
+s32 Telemetry_nthBytesReceive(void);
 
 #endif

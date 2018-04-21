@@ -25,46 +25,57 @@ s32 Telemetry_checkSign(s32 data) {
 }
 
 /**
- * Transmitting a n-byte data
+ * Transmitting a n-byte data using UART
  * @param data
  * @param bytes - number of bytes of the register
  */
 void Telemetry_nthBytesTransmit(s32 data, u8 bytes) {
-    data = BMP180_checkSign(data);
+    // Check sign of the data
+    data = Telemetry_checkSign(data);
+
+    // Transmitting number of bytes
+    USART_Transmit(bytes);
+
+    // Transmitting the data
     for (u8 i = 0; i < bytes; i++) {
         USART_Transmit((data >> (8 * (bytes - i - 1))) & 0xFF);
     }
 }
 
 /**
- * Receiving two bytes using UART interface
- * @return    received two-bytes data
+ * Receiving n-bytes using UART interface
+ * @return  n-bytes data
  */
-int Telemetry_twoBytesReceive(void) {
-    int data = USART_Receive() << 8;
-    data |= USART_Receive();
+s32 Telemetry_nthBytesReceive(void) {
+    // Receiving sign of the data
+    u16 sign = USART_Receive();
+
+    // Receiving number of bytes
+    u16 bytes = USART_Receive();
+
+    // Receiving the data
+    s32 data = 0;
+    for (u8 i = 0; i < bytes; i++) {
+        data += USART_Receive() << (8 * (bytes - i - 1));
+    }
     return data;
 }
 
 /**
- * Transmitting an array of two-byte digits using UART interface
- * @param arr - an array of two-byte digits
+ * Transmitting an array of n-bytes digits using UART interface
+ * @param arr - an array of n-bytes digits
  * @param len - length of array
  */
-void Telemetry_arrayTransmit(int* arr, unsigned char len) {
-    for (unsigned char i = 0; i < len; i++) {
-        int data = arr[i];
-        // If the data variable is less than zero, invert it and transmitting the "minus" identifier
-        if (data < 0) {
-            Telemetry_twoBytesTransmit(MINUS);
-            data = -(data);
-        } else {
-            // Else transmitting "plus" identifier
-            Telemetry_twoBytesTransmit(PLUS);
-        }
+void Telemetry_arrayTransmit(u32* arr, u8 len) {
+    for (u8 i = 0; i < len; i++) {
+        // Create the temporary variable, so as not to change the values of the array
+        u32 data = arr[i];
+
+        // Check sign of the data
+        data = Telemetry_checkSign(data);
 
         // Transmitting data
-        Telemetry_twoBytesTransmit(data);
+        Telemetry_nthBytesTransmit(data);
     }
 }
 

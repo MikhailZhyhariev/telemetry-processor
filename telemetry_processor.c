@@ -1,4 +1,4 @@
-/* Name: telemetry.c
+/* Name: telemetry_processor.c
  * Author: Zhyhariev Mikhail
  * License: MIT
  */
@@ -20,7 +20,6 @@ s32 Telemetry_checkSign(s32 data) {
         USART_Transmit((PLUS >> 8) & 0xFF);
         USART_Transmit(PLUS & 0xFF);
     }
-
     return data;
 }
 
@@ -66,7 +65,7 @@ s32 Telemetry_nthBytesReceive(void) {
  * @param arr - an array of n-bytes digits
  * @param len - length of array
  */
-void Telemetry_arrayTransmit(u32* arr, u8 len) {
+void Telemetry_transmitArray(u32* arr, u8 len) {
     for (u8 i = 0; i < len; i++) {
         // Create the temporary variable, so as not to change the values of the array
         u32 data = arr[i];
@@ -75,13 +74,48 @@ void Telemetry_arrayTransmit(u32* arr, u8 len) {
         data = Telemetry_checkSign(data);
 
         // Transmitting data
-        Telemetry_nthBytesTransmit(data);
+        Telemetry_nthBytesTransmit(data, sizeof(data));
     }
 }
 
 /**
+ * Transmitting an array of n-bytes digits using UART interface
+ * @param  len - length of array
+ * @return     an array of n-bytes digits
+ */
+u32* Telemetry_receiveArray(u8 len) {
+    u32 *arr = (u32 *)malloc(len * sizeof(u32));
+
+    for (u8 i = 0; i < len; i++) {
+        u32 sign = Telemetry_nthBytesReceive(2);
+
+        arr[i] = Telemetry_nthBytesReceive(2);
+        if (sign == MINUS) arr[i] *= -1;
+    }
+    return arr;
+}
+
+/**
+ * Create telemetry items
+ * @param  count     - number of telemetry items
+ * @param  ids       - identifiers of telemetry items
+ * @param  functions - callback functions of telemetry items
+ * @param  types     - variables types which return callback functions
+ * @return           telemetry items structure
+ */
+telemetry_item* getItems(unsigned char count, int* ids, getter* functions, unsigned char* types) {
+    telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
+    for (unsigned char i = 0; i < count; i++) {
+        items[i].id = ids[i];
+        items[i].func = functions[i];
+        items[i].type = types[i];
+    }
+    return items;
+}
+
+/**
  * Transmitting Telemetry data
- * @param id   data type identifier
+ * @param id   - data type identifier
  * @param data - two-byte value for Transmitting
  */
 void Telemetry_dataTransmit(int id, int* data) {

@@ -24,7 +24,7 @@ s32 Telemetry_checkSign(s32 data) {
 }
 
 /**
- * Transmitting a n-byte data using UART
+ * Transmitting the n-byte data using UART
  * @param data
  * @param bytes - number of bytes of the register
  */
@@ -61,14 +61,25 @@ s32 Telemetry_nthBytesReceive(void) {
 }
 
 /**
+ * Transmitting the number having the data type "double"
+ * @param  data
+ */
+void Telemetry_transmitDouble(double data) {
+    u8* ptr = (u8 *)&data;
+    for (u8 i = 0; i < sizeof(double); i++) {
+        USART_Transmit(*(ptr++));
+    }
+}
+
+/**
  * Transmitting an array of n-bytes digits using UART interface
  * @param arr - an array of n-bytes digits
  * @param len - length of array
  */
-void Telemetry_transmitArray(u32* arr, u8 len) {
+void Telemetry_transmitArray(s32* arr, u8 len) {
     for (u8 i = 0; i < len; i++) {
         // Create the temporary variable, so as not to change the values of the array
-        u32 data = arr[i];
+        s32 data = arr[i];
 
         // Check sign of the data
         data = Telemetry_checkSign(data);
@@ -105,6 +116,7 @@ u32* Telemetry_receiveArray(u8 len) {
  */
 telemetry_item* getItems(unsigned char count, int* ids, getter* functions, unsigned char* types) {
     telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
+
     for (unsigned char i = 0; i < count; i++) {
         items[i].id = ids[i];
         items[i].func = functions[i];
@@ -115,37 +127,64 @@ telemetry_item* getItems(unsigned char count, int* ids, getter* functions, unsig
 
 /**
  * Transmitting Telemetry data
- * @param id   - data type identifier
- * @param data - two-byte value for Transmitting
+ * @param type - data type identifier
+ * @param data - n-bytes values for transmitting
  */
-void Telemetry_dataTransmit(int id, int* data) {
+void Telemetry_dataTransmit(u8 type, s32* data) {
     // Transmitting "start" identifier
-    Telemetry_twoBytesTransmit(START);
+    Telemetry_nthBytesTransmit(START, 2);
 
-    // Data array length
-    unsigned char len = 3;
-
-    switch (id) {
-        // If it data from accelerometer transmitting "accel" identifier
-        case ACCEL:
-            Telemetry_twoBytesTransmit(ACCEL);
+    // Transmitting data using the function according to data type
+    switch (type) {
+        case CHAR:
+            Telemetry_nthBytesTransmit(data, 1);
             break;
 
-        // If it data from gyroscope transmitting "gyro" identifier
-        case GYRO:
-            Telemetry_twoBytesTransmit(GYRO);
+        case INT:
+            Telemetry_nthBytesTransmit(data, 2);
             break;
 
-        // If it data from temperature transmitting "temp" identifier
-        case TEMP:
-            // Set length is one because the temperature is one two-bytes digit
-            len = 1;
-            Telemetry_twoBytesTransmit(TEMP);
+        case LONG:
+            Telemetry_nthBytesTransmit(data, 4);
+            break;
+
+        case DOUBLE:
+            Telemetry_transmitDouble(data);
+            break;
+
+        case ARRAY:
+            /*
+            Transmitting data array. Counting a array length using "sizeof" function.
+            Example:
+            s32 data[3] = {1, 2, 3}
+            data array item have "s32" type. sizeof(s32) = 4 (byte)
+            sizeof(data) = sizeof(s32 data[length]) = sizeof(s32 * length) = 4 * length = 12 (byte);
+            length = 12 / 4 = 3
+             */
+            Telemetry_transmitArray(data, sizeof(data) / sizeof(s32));
             break;
     }
+}
 
-    // Transmitting data array
-    Telemetry_arrayTransmit(data, len);
+/**
+ * Listening the Rx wire and transmitting data on request
+ * @param items - telemetry items structure
+ * @param count - number of telemetry items
+ */
+void Telemetry_streamData(telemetry_items* items, u8 count) {
+    // Receiving data identifier
+    s32 id = Telemetry_nthBytesReceive();
+
+    for (u8 i = 0; i < count; i++) {
+        // Find telemetry item with right identifier
+        if (items[i].id == id) {
+            // Getting data to transmit
+            s32* data = items[i].func();
+
+            // Transmitting the data
+            Telemetry_dataTransmit(items[i].type, data);
+        }
+    }
 }
 
 /**

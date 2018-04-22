@@ -14,13 +14,13 @@ typedef double* (*getter)(void);
 // Telemetry items structure
 typedef struct {
     // Identifier of data
-    int id;
+    u32 id;
 
     // Callback functions that used to get data
     getter func;
 
     // Variable type which return callback functions
-    unsigned char type;
+    u8 type;
 } telemetry_item;
 
 // Signed custom variables types
@@ -35,8 +35,9 @@ typedef uint32_t u32;
 // Types of a data
 #define CHAR    0
 #define INT     1
-#define ARRAY   2
-#define DOUBLE  3
+#define LONG    2
+#define ARRAY   3
+#define DOUBLE  4
 
 // Sign identifiers
 #define MINUS 33001
@@ -50,7 +51,7 @@ typedef uint32_t u32;
 s32 Telemetry_checkSign(s32 data);
 
 /**
- * Transmitting a n-byte data using UART
+ * Transmitting the n-byte data using UART
  * @param data
  * @param bytes - number of bytes of the register
  */
@@ -63,11 +64,17 @@ void Telemetry_nthBytesTransmit(s32 data, u8 bytes);
 s32 Telemetry_nthBytesReceive(void);
 
 /**
+ * Transmitting the number having the data type "double"
+ * @param  data
+ */
+void Telemetry_transmitDouble(double data);
+
+/**
  * Transmitting an array of n-bytes digits using UART interface
  * @param arr - an array of n-bytes digits
  * @param len - length of array
  */
-void Telemetry_arrayTransmit(u32* arr, u8 len);
+void Telemetry_arrayTransmit(s32* arr, u8 len);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
@@ -85,5 +92,19 @@ u32* Telemetry_receiveArray(u8 len);
  * @return           telemetry items structure
  */
 telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types);
+
+/**
+ * Transmitting Telemetry data
+ * @param type - data type identifier
+ * @param data - n-bytes values for transmitting
+ */
+void Telemetry_dataTransmit(u8 type, s32* data);
+
+/**
+ * Listening to the Rx wire and transmitting data on request
+ * @param items - telemetry items structure
+ * @param count - number of telemetry items
+ */
+void Telemetry_streamData(telemetry_items* items, u8 count);
 
 #endif

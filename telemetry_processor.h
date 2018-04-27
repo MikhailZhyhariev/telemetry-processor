@@ -9,11 +9,27 @@
 #include <stdint.h>
 #include "uart/uart.h"
 
-#define Telemetry_transmitData  USART_Transmit
-#define Telemetry_receiveData   USART_Receive
-
 // Pointer to a callback function
 typedef double* (*getter)(void);
+
+// Signed custom variables types
+typedef int8_t      s8;
+typedef int16_t     s16;
+typedef int32_t     s32;
+
+// Unsigned custom variables types
+typedef uint8_t     u8;
+typedef uint16_t    u16;
+typedef uint32_t    u32;
+
+/**
+ * The name of functions name for transmitting and receiving data.
+ * Here you can use any data transmission/receiving functions regardless of the data transmission protocol.
+ * "transmitData" function should have type "u8" argument value - data
+ * "receiveData" function should have type "u8" returning value.
+ */
+#define Telemetry_transmitData  USART_Transmit
+#define Telemetry_receiveData   USART_Receive
 
 // Telemetry items structure
 typedef struct {
@@ -27,22 +43,14 @@ typedef struct {
     u8 type;
 } telemetry_item;
 
-// Signed custom variables types
-typedef int8_t      s8;
-typedef int16_t     s16;
-typedef int32_t     s32;
-
-// Unsigned custom variables types
-typedef uint8_t     u8;
-typedef uint16_t    u16;
-typedef uint32_t    u32;
-
 // Types of a data
 #define CHAR    0
 #define INT     1
 #define LONG    2
 #define ARRAY   3
 #define DOUBLE  4
+
+#define START   33000
 
 // Sign identifiers
 #define MINUS   33001

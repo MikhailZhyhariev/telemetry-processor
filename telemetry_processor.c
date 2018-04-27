@@ -14,12 +14,12 @@
  */
 s32 Telemetry_checkSign(s32 data) {
     if (data < 0) {
-        USART_Transmit((MINUS >> 8) & 0xFF);
-        USART_Transmit(MINUS & 0xFF);
+        Telemetry_transmitData((MINUS >> 8) & 0xFF);
+        Telemetry_transmitData(MINUS & 0xFF);
         data = -(data);
     } else {
-        USART_Transmit((PLUS >> 8) & 0xFF);
-        USART_Transmit(PLUS & 0xFF);
+        Telemetry_transmitData((PLUS >> 8) & 0xFF);
+        Telemetry_transmitData(PLUS & 0xFF);
     }
     return data;
 }
@@ -34,11 +34,11 @@ void Telemetry_nthBytesTransmit(s32 data, u8 bytes) {
     data = Telemetry_checkSign(data);
 
     // Transmitting number of bytes
-    USART_Transmit(bytes);
+    Telemetry_transmitData(bytes);
 
     // Transmitting the data
     for (u8 i = 0; i < bytes; i++) {
-        USART_Transmit((data >> (8 * (bytes - i - 1))) & 0xFF);
+        Telemetry_transmitData((data >> (8 * (bytes - i - 1))) & 0xFF);
     }
 }
 
@@ -48,15 +48,15 @@ void Telemetry_nthBytesTransmit(s32 data, u8 bytes) {
  */
 s32 Telemetry_nthBytesReceive(void) {
     // Receiving sign of the data
-    u16 sign = USART_Receive();
+    u16 sign = Telemetry_receiveData();
 
     // Receiving number of bytes
-    u16 bytes = USART_Receive();
+    u16 bytes = Telemetry_receiveData();
 
     // Receiving the data
     s32 data = 0;
     for (u8 i = 0; i < bytes; i++) {
-        data += USART_Receive() << (8 * (bytes - i - 1));
+        data += Telemetry_receiveData() << (8 * (bytes - i - 1));
     }
 
     if (sign == MINUS) data = -(data);
@@ -70,7 +70,7 @@ s32 Telemetry_nthBytesReceive(void) {
 void Telemetry_transmitDouble(double data) {
     u8* ptr = (u8 *)&data;
     for (u8 i = 0; i < sizeof(double); i++) {
-        USART_Transmit(*(ptr++));
+        Telemetry_transmitData(*(ptr++));
     }
 }
 
@@ -101,9 +101,9 @@ u32* Telemetry_receiveArray(u8 len) {
     u32 *arr = (u32 *)malloc(len * sizeof(u32));
 
     for (u8 i = 0; i < len; i++) {
-        u32 sign = Telemetry_nthBytesReceive(2);
+        u32 sign = Telemetry_nthBytesReceive();
 
-        arr[i] = Telemetry_nthBytesReceive(2);
+        arr[i] = Telemetry_nthBytesReceive();
         if (sign == MINUS) arr[i] *= -1;
     }
     return arr;
@@ -140,19 +140,19 @@ void Telemetry_dataTransmit(u8 type, s32* data) {
     // Transmitting data using the function according to data type
     switch (type) {
         case CHAR:
-            Telemetry_nthBytesTransmit(data, 1);
+            Telemetry_nthBytesTransmit(*data, 1);
             break;
 
         case INT:
-            Telemetry_nthBytesTransmit(data, 2);
+            Telemetry_nthBytesTransmit(*data, 2);
             break;
 
         case LONG:
-            Telemetry_nthBytesTransmit(data, 4);
+            Telemetry_nthBytesTransmit(*data, 4);
             break;
 
         case DOUBLE:
-            Telemetry_transmitDouble(data);
+            Telemetry_transmitDouble(*data);
             break;
 
         case ARRAY:
@@ -182,7 +182,7 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
         // Find telemetry item with right identifier
         if (items[i].id == id) {
             // Getting data to transmit
-            s32* data = items[i].func();
+            s32* data = (s32 *)items[i].func();
 
             // Transmitting the data
             Telemetry_dataTransmit(items[i].type, data);

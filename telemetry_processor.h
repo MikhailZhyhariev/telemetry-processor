@@ -6,7 +6,11 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
-#include <stdlib.h>
+#include <stdint.h>
+#include "uart/uart.h"
+
+#define Telemetry_transmitData  USART_Transmit
+#define Telemetry_receiveData   USART_Receive
 
 // Pointer to a callback function
 typedef double* (*getter)(void);
@@ -24,13 +28,14 @@ typedef struct {
 } telemetry_item;
 
 // Signed custom variables types
-typedef short s16;
-typedef int32_t s32;
+typedef int8_t      s8;
+typedef int16_t     s16;
+typedef int32_t     s32;
 
 // Unsigned custom variables types
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef uint32_t u32;
+typedef uint8_t     u8;
+typedef uint16_t    u16;
+typedef uint32_t    u32;
 
 // Types of a data
 #define CHAR    0
@@ -40,8 +45,13 @@ typedef uint32_t u32;
 #define DOUBLE  4
 
 // Sign identifiers
-#define MINUS 33001
-#define PLUS  33002
+#define MINUS   33001
+#define PLUS    33002
+
+
+/**
+ * FUNCTIONS
+ */
 
 /**
  * Checks sign of the data. If data is negative, inverts it and transmitting sign identifier
@@ -105,6 +115,6 @@ void Telemetry_dataTransmit(u8 type, s32* data);
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_streamData(telemetry_items* items, u8 count);
+void Telemetry_streamData(telemetry_item* items, u8 count);
 
 #endif

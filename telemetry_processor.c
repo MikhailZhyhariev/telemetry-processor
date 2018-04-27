@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include "uart/uart.h"
+#include "telemetry_processor.h"
 
 /**
  * Checks sign of the data. If data is negative, inverts it and transmitting sign identifier
@@ -57,6 +58,8 @@ s32 Telemetry_nthBytesReceive(void) {
     for (u8 i = 0; i < bytes; i++) {
         data += USART_Receive() << (8 * (bytes - i - 1));
     }
+
+    if (sign == MINUS) data = -(data);
     return data;
 }
 
@@ -114,7 +117,7 @@ u32* Telemetry_receiveArray(u8 len) {
  * @param  types     - variables types which return callback functions
  * @return           telemetry items structure
  */
-telemetry_item* getItems(unsigned char count, int* ids, getter* functions, unsigned char* types) {
+telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types) {
     telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
 
     for (unsigned char i = 0; i < count; i++) {
@@ -171,7 +174,7 @@ void Telemetry_dataTransmit(u8 type, s32* data) {
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_streamData(telemetry_items* items, u8 count) {
+void Telemetry_streamData(telemetry_item* items, u8 count) {
     // Receiving data identifier
     s32 id = Telemetry_nthBytesReceive();
 
@@ -191,34 +194,34 @@ void Telemetry_streamData(telemetry_items* items, u8 count) {
  * Transmitting data according to received id
  * @return data according to received id
  */
-int* Telemetry_dataReceive() {
-    // Creating a data array
-    int* data = NULL;
-
-    // Receiving two-bytes id
-    int id = Telemetry_twoBytesReceive();
-    switch (id) {
-        case ACCEL:
-            // Getting accelerometer data
-            data = Telemetry_getAccel();
-            // Transmitting data
-            Telemetry_dataTransmit(id, data);
-            break;
-
-        case GYRO:
-            // Getting gyroscope data
-            data = Telemetry_getGyro();
-            // Transmitting data
-            Telemetry_dataTransmit(id, data);
-            break;
-
-        case TEMP:
-            // Getting temperature data
-            data = (int *)Telemetry_getTemp();
-            // Transmitting data
-            Telemetry_dataTransmit(id, data);
-            break;
-    }
-
-    return data;
-}
+// int* Telemetry_dataReceive() {
+//     // Creating a data array
+//     int* data = NULL;
+//
+//     // Receiving two-bytes id
+//     int id = Telemetry_twoBytesReceive();
+//     switch (id) {
+//         case ACCEL:
+//             // Getting accelerometer data
+//             data = Telemetry_getAccel();
+//             // Transmitting data
+//             Telemetry_dataTransmit(id, data);
+//             break;
+//
+//         case GYRO:
+//             // Getting gyroscope data
+//             data = Telemetry_getGyro();
+//             // Transmitting data
+//             Telemetry_dataTransmit(id, data);
+//             break;
+//
+//         case TEMP:
+//             // Getting temperature data
+//             data = (int *)Telemetry_getTemp();
+//             // Transmitting data
+//             Telemetry_dataTransmit(id, data);
+//             break;
+//     }
+//
+//     return data;
+// }

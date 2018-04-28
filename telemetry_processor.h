@@ -28,8 +28,13 @@ typedef uint32_t    u32;
  * "transmitData" function should have type "u8" argument value - data
  * "receiveData" function should have type "u8" returning value.
  */
+// For use on ATMEGA Controllers
 #define Telemetry_transmitData  USART_Transmit
 #define Telemetry_receiveData   USART_Receive
+
+// For use on orangePi (rapberryPi)
+#define Telemetry_transmitData(x)  (USART_Transmit(fd, x))
+#define Telemetry_receiveData()   (USART_Receive(fd))
 
 /**
  * The name of delay function.

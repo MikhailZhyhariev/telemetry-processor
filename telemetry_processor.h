@@ -10,7 +10,7 @@
 #include "uart/uart.h"
 
 // Pointer to a callback function
-typedef double* (*getter)(void);
+typedef void* (*getter)(void);
 
 // Signed custom variables types
 typedef int8_t      s8;
@@ -23,7 +23,7 @@ typedef uint16_t    u16;
 typedef uint32_t    u32;
 
 /**
- * The name of functions name for transmitting and receiving data.
+ * The name of functions for transmitting and receiving data.
  * Here you can use any data transmission/receiving functions regardless of the data transmission protocol.
  * "transmitData" function should have type "u8" argument value - data
  * "receiveData" function should have type "u8" returning value.
@@ -31,10 +31,19 @@ typedef uint32_t    u32;
 #define Telemetry_transmitData  USART_Transmit
 #define Telemetry_receiveData   USART_Receive
 
+/**
+ * The name of delay function.
+ * "delay"      - for use on orangePi (rapberryPi)
+ * "_delay_ms"  - for use on ATMEGA Controllers
+ * Uncomment the desired function.
+ */
+#define Telemetry_delay         _delay_ms
+// #define Telemetry_delay         delay
+
 // Telemetry items structure
 typedef struct {
     // Identifier of data
-    u32 id;
+    s32 id;
 
     // Callback functions that used to get data
     getter func;
@@ -124,5 +133,13 @@ void Telemetry_dataTransmit(u8 type, s32* data);
  * @param count - number of telemetry items
  */
 void Telemetry_streamData(telemetry_item* items, u8 count);
+
+/**
+ * Getting telemetry data after transmitting identifier
+ * @param id    - data identifier
+ * @param items - telemetry items structure
+ * @param count - number of telemetry items
+ */
+void Telemetry_getData(s32 id, telemetry_item* items, u8 count);
 
 #endif

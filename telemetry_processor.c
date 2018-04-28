@@ -68,7 +68,7 @@ s32 Telemetry_nthBytesReceive(void) {
  * @param  data
  */
 void Telemetry_transmitDouble(double data) {
-    u8* ptr = (u8 *)&data;
+    u32* ptr = (u32 *)&data;
     for (u8 i = 0; i < sizeof(double); i++) {
         Telemetry_transmitData(*(ptr++));
     }
@@ -133,7 +133,7 @@ telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types) {
  * @param type - data type identifier
  * @param data - n-bytes values for transmitting
  */
-void Telemetry_dataTransmit(u8 type, s32* data) {
+void Telemetry_dataTransmit(u8 type, s32* data, u8 delay) {
     // Transmitting "start" identifier
     Telemetry_nthBytesTransmit(START, 2);
 
@@ -157,16 +157,22 @@ void Telemetry_dataTransmit(u8 type, s32* data) {
 
         case ARRAY:
             /*
-            Transmitting data array. Counting a array length using "sizeof" function.
-            Example:
-            s32 data[3] = {1, 2, 3}
-            data array item have "s32" type. sizeof(s32) = 4 (byte)
-            sizeof(data) = sizeof(s32 data[length]) = sizeof(s32 * length) = 4 * length = 12 (byte);
-            length = 12 / 4 = 3
-             */
+            * Transmitting data array. Counting a array length using "sizeof" function.
+            *
+            * Example:
+            * s32 data[3] = {1, 2, 3}
+            * data array item have "s32" type. sizeof(s32) = 4 (byte)
+            *
+            * sizeof(data) = sizeof(s32 data[length]) =
+            * sizeof(s32 * length) = 4 * length = 12 (byte);
+            *
+            * length = 12 / 4 = 3
+            */
             Telemetry_transmitArray(data, sizeof(data) / sizeof(s32));
             break;
     }
+
+    Telemetry_delay(delay);
 }
 
 /**
@@ -191,37 +197,27 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
 }
 
 /**
+ * Getting telemetry data after transmitting identifier
+ * @param id    - data identifier
+ * @param items - telemetry items structure
+ * @param count - number of telemetry items
+ */
+void Telemetry_getData(s32 id, telemetry_item* items, u8 count) {
+    // Transmitting data identifier
+    Telemetry_nthBytesTransmit(id);
+
+    // If the identifier "start" is not received - do nothing
+    if (Telemetry_nthBytesReceive() != START) return;
+
+    for (u8 i = 0; i < count; i++) {
+        if (items.id == id) {
+            void* ptr = items[i].func();
+            break;
+        }
+    }
+}
+
+/**
  * Transmitting data according to received id
  * @return data according to received id
  */
-// int* Telemetry_dataReceive() {
-//     // Creating a data array
-//     int* data = NULL;
-//
-//     // Receiving two-bytes id
-//     int id = Telemetry_twoBytesReceive();
-//     switch (id) {
-//         case ACCEL:
-//             // Getting accelerometer data
-//             data = Telemetry_getAccel();
-//             // Transmitting data
-//             Telemetry_dataTransmit(id, data);
-//             break;
-//
-//         case GYRO:
-//             // Getting gyroscope data
-//             data = Telemetry_getGyro();
-//             // Transmitting data
-//             Telemetry_dataTransmit(id, data);
-//             break;
-//
-//         case TEMP:
-//             // Getting temperature data
-//             data = (int *)Telemetry_getTemp();
-//             // Transmitting data
-//             Telemetry_dataTransmit(id, data);
-//             break;
-//     }
-//
-//     return data;
-// }

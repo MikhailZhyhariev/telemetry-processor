@@ -6,8 +6,22 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+
+/**
+ * Choose your platform ORANGE, ATMEGA, etc.
+ * (comment extra line)
+ */
+#define PLATFORM ORANGE
+// Сonnection of libraries depending on the platform
+#if PLATFORM == ORANGE
+    #include <stdio.h>
+    #include <wiringPi.h>
+    #include <wiringSerial.h>
+#elif PLATFORM == ATMEGA
+    #include "uart/uart.h"
+#endif
+
 #include <stdint.h>
-#include "uart/uart.h"
 
 // Pointer to a callback function
 typedef void* (*getter)(void);
@@ -27,14 +41,19 @@ typedef uint32_t    u32;
  * Here you can use any data transmission/receiving functions regardless of the data transmission protocol.
  * "transmitData" function should have type "u8" argument value - data
  * "receiveData" function should have type "u8" returning value.
+ * Uncomment the desired function.
  */
 // For use on ATMEGA Controllers
-#define Telemetry_transmitData  USART_Transmit
-#define Telemetry_receiveData   USART_Receive
+// #define Telemetry_transmitData(x)  (USART_Transmit(x))
+// #define Telemetry_receiveData()    (USART_Receive())
 
 // For use on orangePi (rapberryPi)
-#define Telemetry_transmitData(x)  (USART_Transmit(fd, x))
-#define Telemetry_receiveData()   (USART_Receive(fd))
+#define BAUD        9600
+#define INTERFACE   "/dev/ttyS0"
+const int fd;
+#define Telemetry_init()                (fd = serialOpen(BAUD, INTERFACE))
+#define Telemetry_transmitData(data)    (serialPutchar(fd, data))
+#define Telemetry_receiveData()         (serialGetchar(fd))
 
 /**
  * The name of delay function.
@@ -42,8 +61,8 @@ typedef uint32_t    u32;
  * "_delay_ms"  - for use on ATMEGA Controllers
  * Uncomment the desired function.
  */
-#define Telemetry_delay         _delay_ms
-// #define Telemetry_delay         delay
+// #define Telemetry_delay(ms)     (_delay_ms(ms))
+#define Telemetry_delay(ms)     (delay(ms))
 
 // Telemetry items structure
 typedef struct {
@@ -127,17 +146,19 @@ telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types);
 
 /**
  * Transmitting Telemetry data
- * @param type - data type identifier
- * @param data - n-bytes values for transmitting
+ * @param type  - data type identifier
+ * @param data  - n-bytes values for transmitting
+ * @param delay
  */
-void Telemetry_dataTransmit(u8 type, s32* data);
+ void Telemetry_dataTransmit(u8 type, s32* data);
 
 /**
  * Listening to the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
+ * @param del   - delay
  */
-void Telemetry_streamData(telemetry_item* items, u8 count);
+void Telemetry_streamData(telemetry_item* items, u8 count, u8 del);
 
 /**
  * Getting telemetry data after transmitting identifier
@@ -145,6 +166,6 @@ void Telemetry_streamData(telemetry_item* items, u8 count);
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_getData(s32 id, telemetry_item* items, u8 count);
+void* Telemetry_getData(s32 id, telemetry_item* items, u8 count);
 
 #endif

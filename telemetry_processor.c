@@ -133,7 +133,7 @@ telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types) {
  * @param type - data type identifier
  * @param data - n-bytes values for transmitting
  */
-void Telemetry_dataTransmit(u8 type, s32* data, u8 delay) {
+void Telemetry_dataTransmit(u8 type, s32* data) {
     // Transmitting "start" identifier
     Telemetry_nthBytesTransmit(START, 2);
 
@@ -171,8 +171,6 @@ void Telemetry_dataTransmit(u8 type, s32* data, u8 delay) {
             Telemetry_transmitArray(data, sizeof(data) / sizeof(s32));
             break;
     }
-
-    Telemetry_delay(delay);
 }
 
 /**
@@ -180,7 +178,7 @@ void Telemetry_dataTransmit(u8 type, s32* data, u8 delay) {
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_streamData(telemetry_item* items, u8 count) {
+void Telemetry_streamData(telemetry_item* items, u8 count, u8 del) {
     // Receiving data identifier
     s32 id = Telemetry_nthBytesReceive();
 
@@ -194,6 +192,8 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
             Telemetry_dataTransmit(items[i].type, data);
         }
     }
+
+    Telemetry_delay(del);
 }
 
 /**
@@ -202,22 +202,21 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_getData(s32 id, telemetry_item* items, u8 count) {
+void* Telemetry_getData(s32 id, telemetry_item* items, u8 count) {
     // Transmitting data identifier
-    Telemetry_nthBytesTransmit(id);
+    Telemetry_nthBytesTransmit(id, 2);
 
     // If the identifier "start" is not received - do nothing
-    if (Telemetry_nthBytesReceive() != START) return;
+    if (Telemetry_nthBytesReceive() != START) return NULL;
 
     for (u8 i = 0; i < count; i++) {
-        if (items.id == id) {
-            void* ptr = items[i].func();
-            break;
+        if (items[i].id == id) {
+            // void* ptr = items[i].func();
+            // break;
+
+            return items[i].func();
         }
     }
-}
 
-/**
- * Transmitting data according to received id
- * @return data according to received id
- */
+    return NULL;
+}

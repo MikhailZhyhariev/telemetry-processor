@@ -4,8 +4,32 @@
  */
 
 #include <stdlib.h>
-#include "uart/uart.h"
 #include "telemetry_processor.h"
+
+/**
+ * Transmitting RAW n-bytes data
+ * @param data - n-bytes data
+ */
+void _Telemetry_transmitRawData(u32 data, u8 bytes) {
+    // Transmitting raw data
+    for (u8 i = 0; i < bytes; i++) {
+        Telemetry_transmitData((data >> (8 * (bytes - i - 1))) & 0xFF);
+    }
+}
+
+/**
+ * Receiving RAW n-bytes data
+ * @param  bytes - number of bytes the data
+ * @return       RAW n-bytes data
+ */
+u32 _Telemetry_receiveRawData(u8 bytes) {
+    // Receiving the data
+    u32 data = 0;
+    for (u8 i = 0; i < bytes; i++) {
+        data += Telemetry_receiveData() << (8 * (bytes - i - 1));
+    }
+    return data;
+}
 
 /**
  * Checks sign of the data. If data is negative, inverts it and transmitting sign identifier
@@ -14,12 +38,10 @@
  */
 s32 Telemetry_checkSign(s32 data) {
     if (data < 0) {
-        Telemetry_transmitData((MINUS >> 8) & 0xFF);
-        Telemetry_transmitData(MINUS & 0xFF);
+        _Telemetry_transmitRawData(MINUS, TWO_BYTE);
         data = -(data);
     } else {
-        Telemetry_transmitData((PLUS >> 8) & 0xFF);
-        Telemetry_transmitData(PLUS & 0xFF);
+        _Telemetry_transmitRawData(PLUS, TWO_BYTE);
     }
     return data;
 }
@@ -29,49 +51,47 @@ s32 Telemetry_checkSign(s32 data) {
  * @param data
  * @param bytes - number of bytes of the register
  */
-void Telemetry_nthBytesTransmit(s32 data, u8 bytes) {
+void Telemetry_nthBytesTransmit(s32 data) {
     // Check sign of the data
     data = Telemetry_checkSign(data);
 
-    // Transmitting number of bytes
-    Telemetry_transmitData(bytes);
-
     // Transmitting the data
-    for (u8 i = 0; i < bytes; i++) {
-        Telemetry_transmitData((data >> (8 * (bytes - i - 1))) & 0xFF);
-    }
+    _Telemetry_transmitRawData(data, FOUR_BYTE);
 }
 
 /**
  * Receiving n-bytes using UART interface
  * @return  n-bytes data
  */
-s32 Telemetry_nthBytesReceive(void) {
+s32 Telemetry_nthBytesReceive(u8 bytes) {
     // Receiving sign of the data
-    u16 sign = Telemetry_receiveData();
-
-    // Receiving number of bytes
-    u16 bytes = Telemetry_receiveData();
+    u16 sign = _Telemetry_receiveRawData(TWO_BYTE);
 
     // Receiving the data
-    s32 data = 0;
-    for (u8 i = 0; i < bytes; i++) {
-        data += Telemetry_receiveData() << (8 * (bytes - i - 1));
-    }
+    s32 data = _Telemetry_receiveRawData(bytes);
 
+    // Invert the data if a sign is "minus"
     if (sign == MINUS) data = -(data);
     return data;
 }
 
 /**
- * Transmitting the number having the data type "double"
+ * Transmitting the number having the data type "float"
  * @param  data
  */
-void Telemetry_transmitDouble(double data) {
-    u32* ptr = (u32 *)&data;
-    for (u8 i = 0; i < sizeof(double); i++) {
+void Telemetry_transmitFloat(float data) {
+    u8* ptr = (u8 *)&data;
+    for (u8 i = 0; i < sizeof(float); i++) {
         Telemetry_transmitData(*(ptr++));
     }
+}
+
+/**
+ * Receiving the number having the data type "float"
+ * @return  number that having type "float"
+ */
+float Telemetry_receiveFloat(void) {
+    return (float)_Telemetry_receiveRawData(sizeof(float));
 }
 
 /**
@@ -79,7 +99,22 @@ void Telemetry_transmitDouble(double data) {
  * @param arr - an array of n-bytes digits
  * @param len - length of array
  */
-void Telemetry_transmitArray(s32* arr, u8 len) {
+void Telemetry_transmitArray(s32* arr) {
+    /*
+    * Counting a array length using "sizeof" function.
+    *
+    * Example:
+    * s32 arr[3] = {1, 2, 3}
+    * array item have "s32" type. sizeof(s32) = 4 (byte)
+    *
+    * sizeof(arr) = sizeof(s32 arr[length]) =
+    * sizeof(s32 * length) = 4 * length = 12 (byte);
+    *
+    * length = 12 / 4 = 3
+    */
+    u8 len = sizeof(arr) / sizeof(s32);
+    Telemetry_transmitData(len);
+
     for (u8 i = 0; i < len; i++) {
         // Create the temporary variable, so as not to change the values of the array
         s32 data = arr[i];
@@ -88,23 +123,24 @@ void Telemetry_transmitArray(s32* arr, u8 len) {
         data = Telemetry_checkSign(data);
 
         // Transmitting data
-        Telemetry_nthBytesTransmit(data, sizeof(data));
+        Telemetry_nthBytesTransmit(data);
     }
 }
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
- * @param  len - length of array
  * @return     an array of n-bytes digits
  */
-u32* Telemetry_receiveArray(u8 len) {
-    u32 *arr = (u32 *)malloc(len * sizeof(u32));
+s32* Telemetry_receiveArray(void) {
+    // Receiving an array length
+    u8 len = Telemetry_receiveData();
+
+    // Allocating memory to the data
+    s32 *arr = (s32 *)malloc(len * sizeof(s32));
 
     for (u8 i = 0; i < len; i++) {
-        u32 sign = Telemetry_nthBytesReceive();
-
-        arr[i] = Telemetry_nthBytesReceive();
-        if (sign == MINUS) arr[i] *= -1;
+        // Receiving an array item
+        arr[i] = Telemetry_nthBytesReceive(sizeof(s32));
     }
     return arr;
 }
@@ -117,7 +153,7 @@ u32* Telemetry_receiveArray(u8 len) {
  * @param  types     - variables types which return callback functions
  * @return           telemetry items structure
  */
-telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types) {
+telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types) {
     telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
 
     for (unsigned char i = 0; i < count; i++) {
@@ -135,65 +171,49 @@ telemetry_item* getItems(u8 count, s32* ids, getter* functions, u8* types) {
  */
 void Telemetry_dataTransmit(u8 type, s32* data) {
     // Transmitting "start" identifier
-    Telemetry_nthBytesTransmit(START, 2);
+    _Telemetry_transmitRawData(START, TWO_BYTE);
 
-    // Transmitting data using the function according to data type
+    // Transmitting data type identifier
+    Telemetry_transmitData(type);
+
+    // Check data type and use a special function if a type is "float" or "array"
     switch (type) {
-        case CHAR:
-            Telemetry_nthBytesTransmit(*data, 1);
-            break;
-
-        case INT:
-            Telemetry_nthBytesTransmit(*data, 2);
-            break;
-
-        case LONG:
-            Telemetry_nthBytesTransmit(*data, 4);
-            break;
-
-        case DOUBLE:
-            Telemetry_transmitDouble(*data);
-            break;
+        case FLOAT:
+            // Transmitting data that having "float" type and return from the function
+            Telemetry_transmitFloat(*data);
+            return;
 
         case ARRAY:
-            /*
-            * Transmitting data array. Counting a array length using "sizeof" function.
-            *
-            * Example:
-            * s32 data[3] = {1, 2, 3}
-            * data array item have "s32" type. sizeof(s32) = 4 (byte)
-            *
-            * sizeof(data) = sizeof(s32 data[length]) =
-            * sizeof(s32 * length) = 4 * length = 12 (byte);
-            *
-            * length = 12 / 4 = 3
-            */
-            Telemetry_transmitArray(data, sizeof(data) / sizeof(s32));
-            break;
+            // Transmitting data that having "array" type and return from the function
+            Telemetry_transmitArray(data);
+            return;
     }
+
+    // Transmitting data
+    Telemetry_nthBytesTransmit(*data);
 }
 
 /**
  * Listening the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
+ * @param del   - delay
  */
-void Telemetry_streamData(telemetry_item* items, u8 count, u8 del) {
-    // Receiving data identifier
-    s32 id = Telemetry_nthBytesReceive();
+void Telemetry_streamData(telemetry_item* items, u8 count) {
+    // // Receiving data identifier
+    u8 id = Telemetry_receiveData();
 
     for (u8 i = 0; i < count; i++) {
         // Find telemetry item with right identifier
         if (items[i].id == id) {
             // Getting data to transmit
-            s32* data = (s32 *)items[i].func();
+            s32 data = items[i].func();
 
             // Transmitting the data
-            Telemetry_dataTransmit(items[i].type, data);
+            Telemetry_dataTransmit(items[i].type, &data);
+            break;
         }
     }
-
-    Telemetry_delay(del);
 }
 
 /**
@@ -202,21 +222,23 @@ void Telemetry_streamData(telemetry_item* items, u8 count, u8 del) {
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void* Telemetry_getData(s32 id, telemetry_item* items, u8 count) {
+s32 Telemetry_getData(u8 id) {
     // Transmitting data identifier
-    Telemetry_nthBytesTransmit(id, 2);
+    Telemetry_transmitData(id);
 
     // If the identifier "start" is not received - do nothing
-    if (Telemetry_nthBytesReceive() != START) return NULL;
+    if (_Telemetry_receiveRawData(TWO_BYTE) != START) return -273;
 
-    for (u8 i = 0; i < count; i++) {
-        if (items[i].id == id) {
-            // void* ptr = items[i].func();
-            // break;
+    s32 data = Telemetry_nthBytesReceive(FOUR_BYTE);
+    return data;
 
-            return items[i].func();
-        }
-    }
-
-    return NULL;
+    // for (u8 i = 0; i < count; i++) {
+    //     if (items[i].id == id) {
+    //         // void* ptr = items[i].func();
+    //         // break;
+    //
+    //         return items[i].func();
+    //     }
+    // }
+    // return NULL;
 }

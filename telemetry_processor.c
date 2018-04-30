@@ -169,7 +169,7 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
  * @param type - data type identifier
  * @param data - n-bytes values for transmitting
  */
-void Telemetry_dataTransmit(u8 type, s32* data) {
+void Telemetry_dataTransmit(u8 type, void* data) {
     // Transmitting "start" identifier
     _Telemetry_transmitRawData(START, TWO_BYTE);
 
@@ -180,12 +180,14 @@ void Telemetry_dataTransmit(u8 type, s32* data) {
     switch (type) {
         case FLOAT:
             // Transmitting data that having "float" type and return from the function
-            Telemetry_transmitFloat(*data);
+            float* d = (float *)data;
+            Telemetry_transmitFloat(*d);
             return;
 
         case ARRAY:
             // Transmitting data that having "array" type and return from the function
-            Telemetry_transmitArray(data);
+            s32* arr = (s32 *)data;
+            Telemetry_transmitArray(arr);
             return;
     }
 
@@ -207,7 +209,7 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
         // Find telemetry item with right identifier
         if (items[i].id == id) {
             // Getting data to transmit
-            s32 data = items[i].func();
+            void* ptr = items[i].func();
 
             // Transmitting the data
             Telemetry_dataTransmit(items[i].type, &data);
@@ -219,26 +221,30 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
 /**
  * Getting telemetry data after transmitting identifier
  * @param id    - data identifier
- * @param items - telemetry items structure
- * @param count - number of telemetry items
  */
 s32 Telemetry_getData(u8 id) {
     // Transmitting data identifier
     Telemetry_transmitData(id);
 
     // If the identifier "start" is not received - do nothing
-    if (_Telemetry_receiveRawData(TWO_BYTE) != START) return -273;
+    if (_Telemetry_receiveRawData(TWO_BYTE) != START) return NULL;
 
-    s32 data = Telemetry_nthBytesReceive(FOUR_BYTE);
+    // Receiving data type identifier
+    u8 type = Telemetry_receiveData();
+
+    switch (type) {
+        case ARRAY:
+            s32* data = Telemetry_receiveArray();
+            break;
+
+        case FLOAT:
+            float data = Telemetry_receiveFloat();
+            break;
+
+        default:
+            s32 data = Telemetry_nthBytesReceive(type);
+    }
+
+    // Receiving data
     return data;
-
-    // for (u8 i = 0; i < count; i++) {
-    //     if (items[i].id == id) {
-    //         // void* ptr = items[i].func();
-    //         // break;
-    //
-    //         return items[i].func();
-    //     }
-    // }
-    // return NULL;
 }

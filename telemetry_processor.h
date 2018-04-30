@@ -33,9 +33,6 @@ typedef uint8_t     u8;
 typedef uint16_t    u16;
 typedef uint32_t    u32;
 
-// Pointer to a callback function
-typedef s32 (*getter)(void);
-
 /**
  * The name of functions for transmitting and receiving data.
  * Here you can use any data transmission/receiving functions regardless of the data transmission protocol.
@@ -52,15 +49,16 @@ typedef s32 (*getter)(void);
     // UART settings
     #define BAUD                            9600
     #define INTERFACE                       "/dev/ttyS0"
-
     // File descriptor
     static int fd;
     // Initialisation serial interface for orangePi
     #define Telemetry_init()                (fd = serialOpen(INTERFACE, BAUD))
-
     #define Telemetry_transmitData(data)    (serialPutchar(fd, data))
     #define Telemetry_receiveData()         (serialGetchar(fd))
 #endif
+
+// Pointer to a callback function
+typedef void* (*getter)(void);
 
 // Telemetry items structure
 typedef struct {
@@ -165,7 +163,6 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
  * Transmitting Telemetry data
  * @param type  - data type identifier
  * @param data  - n-bytes values for transmitting
- * @param delay
  */
 void Telemetry_dataTransmit(u8 type, s32* data);
 
@@ -173,16 +170,13 @@ void Telemetry_dataTransmit(u8 type, s32* data);
  * Listening to the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
- * @param del   - delay
  */
 void Telemetry_streamData(telemetry_item* items, u8 count);
 
 /**
  * Getting telemetry data after transmitting identifier
  * @param id    - data identifier
- * @param items - telemetry items structure
- * @param count - number of telemetry items
  */
-s32 Telemetry_getData(u8 id);
+s32* Telemetry_getData(u8 id);
 
 #endif

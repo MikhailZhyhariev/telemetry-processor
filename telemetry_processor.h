@@ -114,7 +114,7 @@ s32 Telemetry_checkSign(s32 data);
  * @param data
  * @param bytes - number of bytes of the register
  */
-void Telemetry_nthBytesTransmit(s32 data);
+void Telemetry_nthBytesTransmit(s32 data, u8 bytes);
 
 /**
  * Receiving n-bytes using UART interface
@@ -126,13 +126,13 @@ s32 Telemetry_nthBytesReceive(u8 bytes);
  * Transmitting the number having the data type "float"
  * @param  data
  */
-void Telemetry_transmitFloat(float data);
+void Telemetry_transmitFloat(float* data);
 
 /**
  * Receiving the number having the data type "float"
  * @return  number that having type "float"
  */
-float Telemetry_receiveFloat(void);
+float* Telemetry_receiveFloat(void);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
@@ -164,7 +164,7 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
  * @param type  - data type identifier
  * @param data  - n-bytes values for transmitting
  */
-void Telemetry_dataTransmit(u8 type, s32* data);
+void Telemetry_dataTransmit(u8 type, void* data);
 
 /**
  * Listening to the Rx wire and transmitting data on request
@@ -177,6 +177,6 @@ void Telemetry_streamData(telemetry_item* items, u8 count);
  * Getting telemetry data after transmitting identifier
  * @param id    - data identifier
  */
-s32* Telemetry_getData(u8 id);
+void* Telemetry_getData(u8 id);
 
 #endif

@@ -18,6 +18,7 @@
     #include <wiringPi.h>
     #include <wiringSerial.h>
 #elif PLATFORM == ATMEGA
+    // Path to uart library. You can specify your path and protocol.
     #include "uart/uart.h"
 #endif
 

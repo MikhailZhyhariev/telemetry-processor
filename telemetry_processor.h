@@ -43,6 +43,7 @@ typedef uint32_t    u32;
  */
  // For use on ATMEGA Controllers
 #if PLATFORM == ATMEGA
+    #define Telemetry_init()                (USART_Init(MYUBRR))
     #define Telemetry_transmitData(x)       (USART_Transmit(x))
     #define Telemetry_receiveData()         (USART_Receive())
 // For use on orangePi (rapberryPi)

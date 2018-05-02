@@ -57,8 +57,21 @@ typedef uint32_t    u32;
     #define Telemetry_receiveData()         (serialGetchar(fd))
 #endif
 
-// Pointer to a callback function
-typedef void* (*getter)(void);
+// Callback for initializing an array of functions
+typedef void*   (*getter)(void);
+// Callback to cast in fixed-point variable
+typedef s32     (*fixed_point)();
+// Callback to cast in float-point variable
+typedef float*  (*float_point)();
+// Callback to cast in an array of fixed-point variables
+// typedef s32*    (*fixed_array)();
+
+// An array information
+typedef struct {
+    u8 type;
+    u8 length;
+    s32* data;
+} array_info;
 
 // Telemetry items structure
 typedef struct {
@@ -70,6 +83,9 @@ typedef struct {
 
     // Variable type which return callback functions
     u8 type;
+
+    // An array information
+    array_info array;
 } telemetry_item;
 
 // Types of a data
@@ -88,6 +104,22 @@ typedef struct {
 /**
  * FUNCTIONS
  */
+
+/**
+ * Wrapping callback function that return a fixed-point value
+ * @param func - callback function
+ * @param len  - length of the array. Use "1" if it's a single value
+ * @return     pointer on the result of the callback function
+ */
+void* _Telemetry_wrapperFixed(fixed_point func, u8 len);
+
+/**
+ * Wrapping callback function that return a floating-point value
+ * @param func - callback function
+ * @param len  - length of the array. Use "1" if it's a single value
+ * @return     pointer on the result of the callback function
+ */
+void* _Telemetry_wrapperFloat(float_point func, u8 len);
 
  /**
   * Transmitting RAW n-bytes data
@@ -136,10 +168,11 @@ float* Telemetry_receiveFloat(void);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
- * @param arr - an array of n-bytes digits
- * @param len - length of array
+ * @param arr  - an array of n-bytes digits
+ * @param type - an array items type
+ * @param len  - length of array
  */
-void Telemetry_arrayTransmit(s32* arr);
+ void Telemetry_transmitArray(s32* arr, u8 type, u8 len);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
@@ -156,15 +189,26 @@ s32* Telemetry_receiveArray(void);
  * @param  types     - variables types which return by callback functions
  * @return           telemetry items structure
  */
-telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types);
 
+/**
+ * Create telemetry items
+ * @param  count     - number of telemetry items
+ * @param  ids       - identifiers of telemetry items
+ * @param  functions - callbacks of telemetry items
+ * @param  types     - variables types which return by callback functions
+ * @param  arr_len   - an arrays length
+ * @param  arr_type  - an arrays types
+ * @return           telemetry items structure
+ */
+telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types, u8* arr_len, u8* arr_type);
 
 /**
  * Transmitting Telemetry data
- * @param type  - data type identifier
  * @param data  - n-bytes values for transmitting
+ * @param type  - data type identifier
+ * @param array - an array information
  */
-void Telemetry_dataTransmit(u8 type, void* data);
+ void Telemetry_dataTransmit(void* data, u8 type, array_info* array);
 
 /**
  * Listening to the Rx wire and transmitting data on request

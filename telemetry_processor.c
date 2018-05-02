@@ -4,11 +4,41 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 #include "telemetry_processor.h"
 
 /**
+ * Wrapping callback function that return a fixed-point value
+ * @param func - callback function
+ * @param len  - length of the array. Use "1" if it's a single value
+ * @return     pointer on the result of the callback function
+ */
+void* _Telemetry_wrapperFixed(fixed_point func, u8 len) {
+    // Allocating memory for callback result
+    s32* data = (s32 *)malloc(sizeof(s32) * len);
+    // Getting callback result
+    *data = func();
+    return data;
+}
+
+/**
+ * Wrapping callback function that return a floating-point value
+ * @param func - callback function
+ * @param len  - length of the array. Use "1" if it's a single value
+ * @return     pointer on the result of the callback function
+ */
+void* _Telemetry_wrapperFloat(float_point func, u8 len) {
+    // Allocating memory for callback result
+    float* data = (float *)malloc(sizeof(float) * len);
+    // Getting callback result
+    data = func();
+    return data;
+}
+
+/**
  * Transmitting RAW n-bytes data
- * @param data - n-bytes data
+ * @param data  - n-bytes data
+ * @param bytes - number of bytes the data
  */
 void _Telemetry_transmitRawData(u32 data, u8 bytes) {
     // Transmitting raw data
@@ -82,7 +112,7 @@ s32 Telemetry_nthBytesReceive(u8 bytes) {
 void Telemetry_transmitFloat(float* data) {
     u8* ptr = (u8 *)data;
     for (u8 i = 0; i < sizeof(float); i++) {
-        Telemetry_transmitData(*(ptr++));
+        Telemetry_transmitData(*(ptr + sizeof(float) - i - 1));
     }
 }
 
@@ -91,33 +121,29 @@ void Telemetry_transmitFloat(float* data) {
  * @return  number that having type "float"
  */
 float* Telemetry_receiveFloat(void) {
-    s32 data = _Telemetry_receiveRawData(sizeof(float));
-    void* ptr = &data;
-    return (float *)ptr;
+    s32 rec = _Telemetry_receiveRawData(sizeof(float));
+    u8 sign = rec >> 31 & 0xFF;
+    u8 exponenta = rec >> 23 & 0xFF;
+    u32 mantissa = rec & 0x7FFFFF;
 
-    // return (float)_Telemetry_receiveRawData(sizeof(float));
+    float a = mantissa / pow(2, 23);
+    float *result = (float *)malloc(sizeof(float));
+    *result = pow(-1, sign) * (1 + a) * pow(2, exponenta - 127);
+    return result;
 }
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
- * @param arr - an array of n-bytes digits
- * @param len - length of array
+ * @param arr  - an array of n-bytes digits
+ * @param type - an array items type
+ * @param len  - length of array
  */
-void Telemetry_transmitArray(s32* arr) {
-    /*
-    * Counting a array length using "sizeof" function.
-    *
-    * Example:
-    * s32 arr[3] = {1, 2, 3}
-    * array item have "s32" type. sizeof(s32) = 4 (byte)
-    *
-    * sizeof(arr) = sizeof(s32 arr[length]) =
-    * sizeof(s32 * length) = 4 * length = 12 (byte);
-    *
-    * length = 12 / 4 = 3
-    */
-    u8 len = sizeof(arr) / sizeof(s32);
+void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
+    // Transmitting an array length
     Telemetry_transmitData(len);
+
+    // Transmitting array items type
+    Telemetry_transmitData(type);
 
     for (u8 i = 0; i < len; i++) {
         // Create the temporary variable, so as not to change the values of the array
@@ -127,7 +153,7 @@ void Telemetry_transmitArray(s32* arr) {
         data = Telemetry_checkSign(data);
 
         // Transmitting data
-        Telemetry_nthBytesTransmit(data, FOUR_BYTE);
+        Telemetry_nthBytesTransmit(data, type);
     }
 }
 
@@ -153,27 +179,35 @@ s32* Telemetry_receiveArray(void) {
  * Create telemetry items
  * @param  count     - number of telemetry items
  * @param  ids       - identifiers of telemetry items
- * @param  functions - callback functions of telemetry items
- * @param  types     - variables types which return callback functions
+ * @param  functions - callbacks of telemetry items
+ * @param  types     - variables types which return by callback functions
+ * @param  arr_len   - an arrays length
+ * @param  arr_type  - an arrays types
  * @return           telemetry items structure
  */
-telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types) {
+telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types, u8* arr_len, u8* arr_type) {
     telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
 
     for (unsigned char i = 0; i < count; i++) {
         items[i].id = ids[i];
         items[i].func = functions[i];
         items[i].type = types[i];
+
+        if (types[i] == ARRAY) {
+            items[i].array.length = arr_len[i];
+            items[i].array.type = arr_type[i];
+        }
     }
     return items;
 }
 
 /**
  * Transmitting Telemetry data
- * @param type - data type identifier
- * @param data - n-bytes values for transmitting
+ * @param data  - n-bytes values for transmitting
+ * @param type  - data type identifier
+ * @param array - an array information
  */
-void Telemetry_dataTransmit(u8 type, void* data) {
+void Telemetry_dataTransmit(void* data, u8 type, array_info* array) {
     // Transmitting "start" identifier
     _Telemetry_transmitRawData(START, TWO_BYTE);
 
@@ -192,13 +226,13 @@ void Telemetry_dataTransmit(u8 type, void* data) {
         case ARRAY: {
             // Transmitting data that having "array" type and return from the function
             s32* arr = (s32 *)data;
-            Telemetry_transmitArray(arr);
+            Telemetry_transmitArray(arr, array->type, array->length);
             return;
         }
     }
 
     // Transmitting data
-    s32* d = (s32 *)data;
+    int* d = (int *)data;
     Telemetry_nthBytesTransmit(*d, type);
 }
 
@@ -206,7 +240,6 @@ void Telemetry_dataTransmit(u8 type, void* data) {
  * Listening the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
- * @param del   - delay
  */
 void Telemetry_streamData(telemetry_item* items, u8 count) {
     // // Receiving data identifier
@@ -216,10 +249,23 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
         // Find telemetry item with right identifier
         if (items[i].id == id) {
             // Getting data to transmit
-            void* ptr = items[i].func();
+            void* ptr;
+            switch (items[i].type) {
+                case ARRAY: {
+                    ptr = _Telemetry_wrapperFixed((fixed_point)items[i].func, items[i].array.length);
+                }
+
+                case FLOAT: {
+                    ptr = _Telemetry_wrapperFloat((float_point)items[i].func, 1);
+                }
+
+                default: {
+                    ptr = _Telemetry_wrapperFixed((fixed_point)items[i].func, 1);
+                }
+            }
 
             // Transmitting the data
-            Telemetry_dataTransmit(items[i].type, ptr);
+            Telemetry_dataTransmit(ptr, items[i].type, &items[i].array);
         }
     }
 }

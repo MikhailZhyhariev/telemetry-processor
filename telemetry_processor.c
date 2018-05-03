@@ -14,9 +14,7 @@
  * @return     pointer on the result of the callback function
  */
 void* _Telemetry_wrapperFixed(fixed_point func, u8 len) {
-    // Allocating memory for callback result
     s32* data = (s32 *)malloc(sizeof(s32) * len);
-    // Getting callback result
     *data = func();
     return data;
 }
@@ -28,17 +26,14 @@ void* _Telemetry_wrapperFixed(fixed_point func, u8 len) {
  * @return     pointer on the result of the callback function
  */
 void* _Telemetry_wrapperFloat(float_point func, u8 len) {
-    // Allocating memory for callback result
     float* data = (float *)malloc(sizeof(float) * len);
-    // Getting callback result
     data = func();
     return data;
 }
 
 /**
  * Transmitting RAW n-bytes data
- * @param data  - n-bytes data
- * @param bytes - number of bytes the data
+ * @param data - n-bytes data
  */
 void _Telemetry_transmitRawData(u32 data, u8 bytes) {
     // Transmitting raw data
@@ -142,15 +137,9 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
     // Transmitting an array length
     Telemetry_transmitData(len);
 
-    // Transmitting array items type
-    Telemetry_transmitData(type);
-
     for (u8 i = 0; i < len; i++) {
         // Create the temporary variable, so as not to change the values of the array
         s32 data = arr[i];
-
-        // Check sign of the data
-        data = Telemetry_checkSign(data);
 
         // Transmitting data
         Telemetry_nthBytesTransmit(data, type);

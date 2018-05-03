@@ -65,8 +65,6 @@ typedef void*   (*getter)(void);
 typedef s32     (*fixed_point)();
 // Callback to cast in float-point variable
 typedef float*  (*float_point)();
-// Callback to cast in an array of fixed-point variables
-// typedef s32*    (*fixed_array)();
 
 // An array information
 typedef struct {
@@ -182,15 +180,6 @@ float* Telemetry_receiveFloat(void);
  * @return     an array of n-bytes digits
  */
 s32* Telemetry_receiveArray(void);
-
-/**
- * Create telemetry items
- * @param  count     - number of telemetry items
- * @param  ids       - identifiers of telemetry items
- * @param  functions - callbacks of telemetry items
- * @param  types     - variables types which return by callback functions
- * @return           telemetry items structure
- */
 
 /**
  * Create telemetry items

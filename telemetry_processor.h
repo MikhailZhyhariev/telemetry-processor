@@ -64,7 +64,9 @@ typedef void*   (*getter)(void);
 // Callback to cast in fixed-point variable
 typedef s32     (*fixed_point)();
 // Callback to cast in float-point variable
-typedef float*  (*float_point)();
+typedef float   (*float_point)();
+// Callback to cast in an array of fixed-point variables
+typedef s32*    (*fixed_array)();
 
 // An array information
 typedef struct {
@@ -106,22 +108,6 @@ typedef struct {
  */
 
 /**
- * Wrapping callback function that return a fixed-point value
- * @param func - callback function
- * @param len  - length of the array. Use "1" if it's a single value
- * @return     pointer on the result of the callback function
- */
-void* _Telemetry_wrapperFixed(fixed_point func, u8 len);
-
-/**
- * Wrapping callback function that return a floating-point value
- * @param func - callback function
- * @param len  - length of the array. Use "1" if it's a single value
- * @return     pointer on the result of the callback function
- */
-void* _Telemetry_wrapperFloat(float_point func, u8 len);
-
- /**
   * Transmitting RAW n-bytes data
   * @param data - n-bytes data
   */
@@ -199,7 +185,7 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
  * @param type  - data type identifier
  * @param array - an array information
  */
- void Telemetry_dataTransmit(void* data, u8 type, array_info* array);
+ void Telemetry_dataTransmit(telemetry_item* item);
 
 /**
  * Listening to the Rx wire and transmitting data on request

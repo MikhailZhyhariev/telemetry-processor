@@ -54,10 +54,10 @@ s32 Telemetry_checkSign(s32 data) {
  */
 void Telemetry_nthBytesTransmit(s32 data, u8 bytes) {
     // Check sign of the data
-    data = Telemetry_checkSign(data);
+    u32 d = Telemetry_checkSign(data);
 
     // Transmitting the data
-    _Telemetry_transmitRawData(data, bytes);
+    _Telemetry_transmitRawData(d, bytes);
 }
 
 /**
@@ -90,11 +90,16 @@ void Telemetry_transmitFloat(float* data) {
  * @return  number that having type "float"
  */
 float* Telemetry_receiveFloat(void) {
+    // Receive four-byte raw digit
     s32 rec = _Telemetry_receiveRawData(sizeof(float));
+    // Getting sign from recevived raw digit
     u8 sign = rec >> 31 & 0xFF;
+    // Getting exponenta from recevived raw digit
     u8 exponenta = rec >> 23 & 0xFF;
+    // Getting mantissa from recevived raw digit
     u32 mantissa = rec & 0x7FFFFF;
 
+    // Calculating float digit and return it
     float a = mantissa / pow(2, 23);
     float *result = (float *)malloc(sizeof(float));
     *result = pow(-1, sign) * (1 + a) * pow(2, exponenta - 127);
@@ -114,12 +119,9 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
     // Transmitting an array type
     Telemetry_transmitData(type);
 
+    // Transmitting data
     for (u8 i = 0; i < len; i++) {
-        // Create the temporary variable, so as not to change the values of the array
-        s32 data = arr[i];
-
-        // Transmitting data
-        Telemetry_nthBytesTransmit(data, type);
+        Telemetry_nthBytesTransmit(arr[i], type);
     }
 }
 
@@ -217,7 +219,7 @@ void Telemetry_dataTransmit(telemetry_item* item) {
  * @param items - telemetry items structure
  * @param count - number of telemetry items
  */
-void Telemetry_streamData(telemetry_item* items, u8 count) {
+u8 Telemetry_streamData(telemetry_item* items, u8 count) {
     // // Receiving data identifier
     u8 id = Telemetry_receiveData();
 
@@ -228,6 +230,8 @@ void Telemetry_streamData(telemetry_item* items, u8 count) {
             Telemetry_dataTransmit(&items[i]);
         }
     }
+
+    return id;
 }
 
 /**

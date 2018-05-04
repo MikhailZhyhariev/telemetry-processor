@@ -158,7 +158,7 @@ float* Telemetry_receiveFloat(void);
  * @param type - an array items type
  * @param len  - length of array
  */
- void Telemetry_transmitArray(s32* arr, u8 type, u8 len);
+void Telemetry_transmitArray(s32* arr, u8 type, u8 len);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
@@ -185,14 +185,15 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
  * @param type  - data type identifier
  * @param array - an array information
  */
- void Telemetry_dataTransmit(telemetry_item* item);
+void Telemetry_dataTransmit(telemetry_item* item);
 
 /**
  * Listening to the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
+ * @return      received identifier
  */
-void Telemetry_streamData(telemetry_item* items, u8 count);
+u8 Telemetry_streamData(telemetry_item* items, u8 count);
 
 /**
  * Getting telemetry data after transmitting identifier

@@ -62,11 +62,11 @@ typedef uint32_t    u32;
 // Callback for initializing an array of functions
 typedef void*   (*getter)(void);
 // Callback to cast in fixed-point variable
-typedef s32     (*fixed_point)();
+typedef s32     (*fixed_point)(void);
 // Callback to cast in float-point variable
-typedef float   (*float_point)();
+typedef float   (*float_point)(void);
 // Callback to cast in an array of fixed-point variables
-typedef s32*    (*fixed_array)();
+typedef s32*    (*fixed_array)(void);
 
 // An array information
 typedef struct {

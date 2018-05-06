@@ -49,7 +49,7 @@ typedef uint32_t    u32;
 // For use on orangePi (rapberryPi)
 #elif PLATFORM == ORANGE
     // UART settings
-    #define BAUD                            9600
+    #define BAUD                            4800
     #define INTERFACE                       "/dev/ttyS0"
     // File descriptor
     static int fd;
@@ -88,6 +88,8 @@ typedef struct {
 
     // An array information
     array_info array;
+
+    void* data;
 } telemetry_item;
 
 // Types of a data
@@ -162,10 +164,9 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface
- * @param  len - length of array
- * @return     an array of n-bytes digits
+ * @return  array_info struct item with received data (type, length, data)
  */
-s32* Telemetry_receiveArray(void);
+array_info* Telemetry_receiveArray(void);
 
 /**
  * Create telemetry items
@@ -197,8 +198,9 @@ u8 Telemetry_streamData(telemetry_item* items, u8 count);
 
 /**
  * Getting telemetry data after transmitting identifier
- * @param id    - data identifier
+ * @param  id - data identifier
+ * @return    telemetry struct item with received data
  */
-void* Telemetry_getData(u8 id);
+telemetry_item* Telemetry_getData(u8 id);
 
 #endif

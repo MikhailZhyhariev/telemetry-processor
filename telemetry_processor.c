@@ -129,7 +129,7 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
  * Transmitting an array of n-bytes digits using UART interface
  * @return     an array of n-bytes digits
  */
-s32* Telemetry_receiveArray(void) {
+array_info* Telemetry_receiveArray(void) {
     // Receiving an array length
     u8 len = Telemetry_receiveData();
 
@@ -143,7 +143,18 @@ s32* Telemetry_receiveArray(void) {
         // Receiving an array item
         arr[i] = Telemetry_nthBytesReceive(type);
     }
-    return arr;
+
+    array_info* result = (array_info *)malloc(sizeof(array_info));
+    result->type = type;
+    result->length = len;
+    result->data = arr;
+    // array_info result = {
+    //     type,
+    //     len,
+    //     arr
+    // };
+    return result;
+    // return arr;
 }
 
 /**
@@ -238,7 +249,10 @@ u8 Telemetry_streamData(telemetry_item* items, u8 count) {
  * Getting telemetry data after transmitting identifier
  * @param id    - data identifier
  */
-void* Telemetry_getData(u8 id) {
+telemetry_item* Telemetry_getData(u8 id) {
+    telemetry_item* item = (telemetry_item *)malloc(sizeof(telemetry_item));
+    array_info* arr;
+
     // Transmitting data identifier
     Telemetry_transmitData(id);
 
@@ -250,19 +264,31 @@ void* Telemetry_getData(u8 id) {
 
     switch (type) {
         case ARRAY: {
-            s32* data = Telemetry_receiveArray();
-            return data;
+            // s32* data = Telemetry_receiveArray();
+            arr = Telemetry_receiveArray();
+            item->array = *arr;
+            item->data = arr->data;
+            break;
+            // return data;
         }
 
         case FLOAT: {
             float* data = Telemetry_receiveFloat();
-            return data;
+            item->data = data;
+            break;
+            // return data;
         }
 
         default: {
             s32* data = (s32 *)malloc(sizeof(s32));
             *data = Telemetry_nthBytesReceive(type);
-            return data;
+            item->data = data;
+            break;
+            // return data;
         }
     }
+
+    item->type = type;
+    item->id = id;
+    return item;
 }

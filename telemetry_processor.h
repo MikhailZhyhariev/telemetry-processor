@@ -72,7 +72,7 @@ typedef s32*    (*fixed_array)(void);
 typedef struct {
     u8 type;
     u8 length;
-    s32* data;
+    void* data;
 } array_info;
 
 // Telemetry items structure
@@ -160,7 +160,7 @@ float* Telemetry_receiveFloat(void);
  * @param type - an array items type
  * @param len  - length of array
  */
-void Telemetry_transmitArray(s32* arr, u8 type, u8 len);
+void Telemetry_transmitArray(void* arr, u8 type, u8 len);
 
 /**
  * Transmitting an array of n-bytes digits using UART interface

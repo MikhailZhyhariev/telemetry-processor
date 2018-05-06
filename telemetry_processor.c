@@ -112,7 +112,7 @@ float* Telemetry_receiveFloat(void) {
  * @param type - an array items type
  * @param len  - length of array
  */
-void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
+void Telemetry_transmitArray(void* arr, u8 type, u8 len) {
     // Transmitting an array length
     Telemetry_transmitData(len);
 
@@ -120,8 +120,16 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
     Telemetry_transmitData(type);
 
     // Transmitting data
-    for (u8 i = 0; i < len; i++) {
-        Telemetry_nthBytesTransmit(arr[i], type);
+    if (type == FLOAT) {
+        float* a = (float *)arr;
+        for (u8 i = 0; i < len; i++) {
+            Telemetry_transmitFloat(&a[i]);
+        }
+    } else {
+        s32* a = (s32 *)arr;
+        for (u8 i = 0; i < len; i++) {
+            Telemetry_nthBytesTransmit(a[i], type);
+        }
     }
 }
 
@@ -130,6 +138,8 @@ void Telemetry_transmitArray(s32* arr, u8 type, u8 len) {
  * @return     an array of n-bytes digits
  */
 array_info* Telemetry_receiveArray(void) {
+    array_info* result = (array_info *)malloc(sizeof(array_info));
+
     // Receiving an array length
     u8 len = Telemetry_receiveData();
 
@@ -137,24 +147,27 @@ array_info* Telemetry_receiveArray(void) {
     u8 type = Telemetry_receiveData();
 
     // Allocating memory to the data
-    s32 *arr = (s32 *)malloc(len * sizeof(s32));
-
-    for (u8 i = 0; i < len; i++) {
-        // Receiving an array item
-        arr[i] = Telemetry_nthBytesReceive(type);
+    if (type == FLOAT) {
+        float *arr = (float *)malloc(len * sizeof(float));
+        // Receiving an array items
+        for (u8 i = 0; i < len; i++) {
+            float *a = Telemetry_receiveFloat();
+            arr[i] = *a;
+            free(a);
+        }
+        result->data = arr;
+    } else {
+        s32 *arr = (s32 *)malloc(len * sizeof(s32));
+        // Receiving an array items
+        for (u8 i = 0; i < len; i++) {
+            arr[i] = Telemetry_nthBytesReceive(type);
+        }
+        result->data = arr;
     }
 
-    array_info* result = (array_info *)malloc(sizeof(array_info));
     result->type = type;
-    result->length = len;
-    result->data = arr;
-    // array_info result = {
-    //     type,
-    //     len,
-    //     arr
-    // };
+
     return result;
-    // return arr;
 }
 
 /**
@@ -264,19 +277,16 @@ telemetry_item* Telemetry_getData(u8 id) {
 
     switch (type) {
         case ARRAY: {
-            // s32* data = Telemetry_receiveArray();
             arr = Telemetry_receiveArray();
             item->array = *arr;
             item->data = arr->data;
             break;
-            // return data;
         }
 
         case FLOAT: {
             float* data = Telemetry_receiveFloat();
             item->data = data;
             break;
-            // return data;
         }
 
         default: {
@@ -284,7 +294,6 @@ telemetry_item* Telemetry_getData(u8 id) {
             *data = Telemetry_nthBytesReceive(type);
             item->data = data;
             break;
-            // return data;
         }
     }
 

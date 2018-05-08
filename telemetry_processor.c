@@ -165,6 +165,7 @@ array_info* Telemetry_receiveArray(void) {
         result->data = arr;
     }
 
+    result->length = len;
     result->type = type;
 
     return result;
@@ -218,6 +219,7 @@ void Telemetry_dataTransmit(telemetry_item* item) {
             float d = func();
 
             Telemetry_transmitFloat(&d);
+            free(d);
             return;
         }
 
@@ -234,8 +236,9 @@ void Telemetry_dataTransmit(telemetry_item* item) {
 
     // Transmitting data
     fixed_point func = (fixed_point)item->func;
-    int d = func();
+    s32 d = func();
     Telemetry_nthBytesTransmit(d, item->type);
+    free(d);
 }
 
 /**

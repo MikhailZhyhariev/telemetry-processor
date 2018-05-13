@@ -134,8 +134,8 @@ void Telemetry_transmitArray(void* arr, u8 type, u8 len) {
 }
 
 /**
- * Transmitting an array of n-bytes digits using UART interface
- * @return     an array of n-bytes digits
+ * Receiving an array of n-bytes digits using UART interface
+ * @return    the array_info structure
  */
 array_info* Telemetry_receiveArray(void) {
     array_info* result = (array_info *)malloc(sizeof(array_info));
@@ -245,6 +245,7 @@ void Telemetry_dataTransmit(telemetry_item* item) {
  * Listening the Rx wire and transmitting data on request
  * @param items - telemetry items structure
  * @param count - number of telemetry items
+ * @return        received id
  */
 u8 Telemetry_streamData(telemetry_item* items, u8 count) {
     // // Receiving data identifier
@@ -264,6 +265,7 @@ u8 Telemetry_streamData(telemetry_item* items, u8 count) {
 /**
  * Getting telemetry data after transmitting identifier
  * @param id    - data identifier
+ * @return      item of the telemetry_item structure
  */
 telemetry_item* Telemetry_getData(u8 id) {
     telemetry_item* item = (telemetry_item *)malloc(sizeof(telemetry_item));

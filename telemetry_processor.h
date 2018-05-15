@@ -39,7 +39,6 @@ typedef uint32_t    u32;
  * Here you can use any data transmission/receiving functions regardless of the data transmission protocol.
  * "transmitData" function should have type "u8" argument value - data
  * "receiveData" function should have type "u8" returning value.
- * Uncomment the desired function.
  */
  // For use on ATMEGA Controllers
 #if PLATFORM == ATMEGA

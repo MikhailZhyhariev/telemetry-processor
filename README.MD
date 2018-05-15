@@ -9,6 +9,7 @@ Supported devices:
 -   orangePi;
 -   raspberryPi;
 -   etc...
+
 Supported protocols:
 -   UART;
 -   I2C;

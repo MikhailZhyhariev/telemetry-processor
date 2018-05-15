@@ -142,9 +142,9 @@ You can use any data transmission/receiving functions regardless of the data
 transmission protocol.
 In `init` function, you can initialize protocol and put some settings.
 
-`transmitData` function should have type «`unsigned char`» argument value - data
+`transmitData` function should have type `unsigned char` argument value - data
 
-`receiveData`  function should have type «`unsigned char`» returning value.
+`receiveData`  function should have type `unsigned char` returning value.
 
 Example for AVR microcontrollers:
 ```

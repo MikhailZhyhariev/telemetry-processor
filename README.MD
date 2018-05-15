@@ -3,6 +3,7 @@ Description
 
 Telemetry_processor is a library for simple data transfer between devices on
 different data protocols.
+
 Supported devices:
 -   AVR microcontrollers;
 -   orangePi;
@@ -76,14 +77,19 @@ int main(void) {
 
 If you don't have an `ARRAY` type data you can use `NULL` instead of `arr_len`
 and `arr_type` arrays.
+
 `Telemetry_getItems` function return an array of the `telemetry_item` structure.
+
 To transfer data, you need to use the `Telemetry_streamData` function, which
 takes a number of elements and an array of `telemetry_item` structures, and
 returns the received identifier.
+
 On the receiving side, you need to use the function `Telemetry_getData`, which
 takes an identifier, and returns a `telemetry_item` structure that contains the
 received data.
+
 Example.
+
 Source code on transmitting side:
 ```
 unsigned char id = Telemetry_streamData(items, COUNT);
@@ -134,8 +140,11 @@ Data transmit/receive protocol
 You can use any data transmission/receiving functions regardless of the data
 transmission protocol.
 In `init` function, you can initialize protocol and put some settings.
+
 `transmitData` function should have type «`unsigned char`» argument value - data
+
 `receiveData`  function should have type «`unsigned char`» returning value.
+
 Example for AVR microcontrollers:
 ```
 #define Telemetry_init()                (USART_Init(MYUBRR))

@@ -52,7 +52,7 @@ typedef uint32_t    u32;
     #define INTERFACE                       "/dev/ttyS0"
     // File descriptor
     static int fd;
-    // Initialisation serial interface for orangePi
+    // Initialization serial interface for orangePi
     #define Telemetry_init()                (fd = serialOpen(INTERFACE, BAUD))
     #define Telemetry_transmitData(data)    (serialPutchar(fd, data))
     #define Telemetry_receiveData()         (serialGetchar(fd))

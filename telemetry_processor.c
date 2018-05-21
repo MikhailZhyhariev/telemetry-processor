@@ -219,7 +219,6 @@ void Telemetry_dataTransmit(telemetry_item* item) {
             float d = func();
 
             Telemetry_transmitFloat(&d);
-            free(d);
             return;
         }
 
@@ -238,7 +237,6 @@ void Telemetry_dataTransmit(telemetry_item* item) {
     fixed_point func = (fixed_point)item->func;
     s32 d = func();
     Telemetry_nthBytesTransmit(d, item->type);
-    free(d);
 }
 
 /**

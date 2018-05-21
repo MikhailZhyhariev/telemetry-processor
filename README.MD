@@ -49,35 +49,39 @@ int main(void) {
         (getter)function_2,
         (getter)function_3,
         (getter)function_4
-       };
+    };
 
-       // An array of data types
-       u8 types[COUNT] = {
-           ONE_BYTE,
-           TWO_BYTE,
-           ARRAY,
-           FLOAT,
-       };
+    // An array of data types
+    u8 types[COUNT] = {
+        ONE_BYTE,
+        TWO_BYTE,
+        ARRAY,
+        FLOAT,
+    };
 
-       // Identifiers
-       u8 ids[COUNT] = {
-           EXAMPLE_1,
-           EXAMPLE_2,
-           EXAMPLE_3,
-           EXAMPLE_4,
-        };
+    // Identifiers
+    u8 ids[COUNT] = {
+        EXAMPLE_1,
+        EXAMPLE_2,
+        EXAMPLE_3,
+        EXAMPLE_4,
+    };
 
-       // Information about array (type and length)
-       u8 arr_type[] = {TWO_BYTE};
-       u8 arr_len[] = {3};
+    // Information about array (type and length)
+    u8 arr_type[] = {TWO_BYTE};
+    u8 arr_len[] = {3};
 
-       // Initialize stream items
-       telemetry_item* items = Telemetry_getItems(COUNT, ids, functions, types, arr_len, arr_type);
+    // Initialize stream items
+    telemetry_item* items = Telemetry_getItems(COUNT, ids, functions, types, arr_len, arr_type);
 }
 ```
 
 If you don't have an `ARRAY` type data you can use `NULL` instead of `arr_len`
 and `arr_type` arrays.
+
+```
+telemetry_item* items = Telemetry_getItems(COUNT, ids, functions, types, NULL, NULL);
+```
 
 `Telemetry_getItems` function return an array of the `telemetry_item` structure.
 
@@ -101,7 +105,7 @@ switch (id) {
     case EXAMPLE_2:
         // do something...
         break;
-        // etc...
+    // etc...
 }
 ```
 
@@ -135,6 +139,25 @@ Available type of a data:
 -   `FOUR_BYTE`
 -   `ARRAY`
 -   `FLOAT`
+
+Custom variable type
+--------------------
+
+Library use `stdint.h` variable types.
+
+```
+#include <stdint.h>
+
+// Signed custom variables types
+typedef int8_t      s8;
+typedef int16_t     s16;
+typedef int32_t     s32;
+
+// Unsigned custom variables types
+typedef uint8_t     u8;
+typedef uint16_t    u16;
+typedef uint32_t    u32;
+```
 
 Data transmit/receive protocol
 ------------------------------

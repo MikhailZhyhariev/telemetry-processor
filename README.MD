@@ -4,6 +4,8 @@ Description
 Telemetry_processor is a library for simple data transfer between devices on
 different data protocols.
 
+Star this repository, if it turned out to be useful to you. Thank you :)
+
 Supported devices:
 -   AVR microcontrollers;
 -   orangePi;

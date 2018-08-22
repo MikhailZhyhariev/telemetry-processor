@@ -181,7 +181,12 @@ array_info* Telemetry_receiveArray(void) {
  * @param  arr_type  - an arrays types
  * @return           telemetry items structure
  */
-telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* types, u8* arr_len, u8* arr_type) {
+telemetry_item* Telemetry_getItems(u8 count,
+                                   u8* ids,
+                                   getter* functions,
+                                   u8* types,
+                                   u8* arr_len,
+                                   u8* arr_type) {
     telemetry_item* items = (telemetry_item *)malloc(sizeof(telemetry_item) * count);
 
     u8 a = 0;
@@ -200,9 +205,7 @@ telemetry_item* Telemetry_getItems(u8 count, u8* ids, getter* functions, u8* typ
 
 /**
  * Transmitting Telemetry data
- * @param data  - n-bytes values for transmitting
- * @param type  - data type identifier
- * @param array - an array information
+ * @param item  - telemetry item that will be transmit
  */
 void Telemetry_dataTransmit(telemetry_item* item) {
     // Transmitting "start" identifier
@@ -246,7 +249,7 @@ void Telemetry_dataTransmit(telemetry_item* item) {
  * @return        received id
  */
 u8 Telemetry_streamData(telemetry_item* items, u8 count) {
-    // // Receiving data identifier
+    // Receiving data identifier
     u8 id = Telemetry_receiveData();
 
     for (u8 i = 0; i < count; i++) {
